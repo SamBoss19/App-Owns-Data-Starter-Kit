@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -70,44 +70,60 @@ namespace AppOwnsDataShared.Services {
     }
 
     public User GetUser(string LoginId) {
-      var user = dbContext.Users.Where(user => user.LoginId == LoginId).First();
+      var user = dbContext.Users.FirstOrDefault(user => user.LoginId.ToLower() == LoginId.ToLower());
+      if (user == null) {
+        // Auto-create user on first request to allow admin mapping in UI
+        user = new User {
+          LoginId = LoginId,
+          UserName = LoginId.Contains("@") ? LoginId.Split('@')[0] : LoginId,
+          Created = DateTime.Now,
+          LastLogin = DateTime.Now,
+          CanEdit = false,
+          CanCreate = false,
+          TenantAdmin = false
+        };
+        dbContext.Users.Add(user);
+        dbContext.SaveChanges();
+      }
       return user;
     }
 
     public User UpdateUser(User currentUser) {
-      var users = dbContext.Users.Where(user => user.LoginId == currentUser.LoginId);
-      User user;
-      if (users.Count() > 0) {
-        user = users.First();
-      }
-      else {
-        user = new User();
+      var user = dbContext.Users.FirstOrDefault(u => u.LoginId.ToLower() == currentUser.LoginId.ToLower());
+      if (user == null) {
+        user = new User {
+          LoginId = currentUser.LoginId,
+          Created = DateTime.Now
+        };
+        dbContext.Users.Add(user);
       }
       user.UserName = currentUser.UserName;
       user.CanEdit = currentUser.CanEdit;
       user.CanCreate = currentUser.CanCreate;
       user.TenantName = currentUser.TenantName;
+      user.AllowedReportIds = currentUser.AllowedReportIds;
       dbContext.SaveChanges();
       return user;
     }
 
     public User CreateUser(User newUser) {
-      var users = dbContext.Users.Where(user => user.LoginId == newUser.LoginId);
-      User user;
-      if (users.Count() > 0) {
-        user = users.First();
-      }
-      else {
+      var user = dbContext.Users.FirstOrDefault(u => u.LoginId.ToLower() == newUser.LoginId.ToLower());
+      bool isNew = false;
+      if (user == null) {
         user = new User();
         user.Created = DateTime.Now;
+        user.LoginId = newUser.LoginId;
+        isNew = true;
       }
-      user.LoginId = newUser.LoginId;
       user.UserName = !string.IsNullOrEmpty(newUser.UserName) ? newUser.UserName : user.UserName;
       user.TenantName = !string.IsNullOrEmpty(newUser.TenantName) ? newUser.TenantName : user.TenantName;
       user.CanEdit = newUser.CanEdit;
       user.CanCreate = newUser.CanCreate;
+      user.AllowedReportIds = newUser.AllowedReportIds;
       user.LastLogin = DateTime.Now;
-      dbContext.Users.Add(user);
+      if (isNew) {
+        dbContext.Users.Add(user);
+      }
       dbContext.SaveChanges();
       return user;
     }
@@ -137,12 +153,12 @@ namespace AppOwnsDataShared.Services {
     }
 
     public void ProcessUserLogin(User currentUser) {
-
-      bool userExists = this.dbContext.Users.Any(user => user.LoginId == currentUser.LoginId);
-
-      if (userExists) {
-        currentUser = dbContext.Users.Find(currentUser.LoginId);
-        currentUser.LastLogin = DateTime.Now;
+      var existingUser = dbContext.Users.FirstOrDefault(user => user.LoginId.ToLower() == currentUser.LoginId.ToLower());
+      if (existingUser != null) {
+        existingUser.LastLogin = DateTime.Now;
+        if (!string.IsNullOrEmpty(currentUser.UserName)) {
+          existingUser.UserName = currentUser.UserName;
+        }
         dbContext.SaveChanges();
       }
       else {
@@ -154,7 +170,6 @@ namespace AppOwnsDataShared.Services {
         dbContext.Users.Add(currentUser);
         dbContext.SaveChanges();
       }
-
     }
   }
 

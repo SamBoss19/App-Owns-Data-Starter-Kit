@@ -1,0 +1,145 @@
+========================================================================
+     UBUNTU LINUX DEPLOYMENT GUIDE - MIKANO ANALYTICS PORTAL
+========================================================================
+
+This guide provides step-by-step instructions for deploying the 
+Mikano Analytics Portal (.NET 6 Web App / React SPA) to an Ubuntu 
+Linux cloud server.
+
+------------------------------------------------------------------------
+1. PREREQUISITES (INSTALL ON UBUNTU)
+------------------------------------------------------------------------
+Run the following commands on your Ubuntu server terminal to install
+the required runtimes:
+
+# Update packages
+sudo apt update && sudo apt upgrade -y
+
+# Install .NET 6 Runtime & SDK
+sudo apt install -y dotnet-sdk-6.0
+
+# Install Node.js (v18+) and npm
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Install Nginx (Web Server / Reverse Proxy)
+sudo apt install -y nginx
+
+------------------------------------------------------------------------
+2. BUILD THE APPLICATIONS
+------------------------------------------------------------------------
+Copy your codebase to the server (e.g., to /var/www/mikano-analytics)
+and compile the apps:
+
+# Navigate to the root directory
+cd /var/www/mikano-analytics
+
+# 1. Build and Publish the Admin Web App
+dotnet publish AppOwnsDataAdmin/AppOwnsDataAdmin.csproj -c Release -o ./publish-admin
+
+# 2. Build and Publish the Web API
+dotnet publish AppOwnsDataWebApi/AppOwnsDataWebApi.csproj -c Release -o ./publish-api
+
+# 3. Build the React Client Assets
+cd AppOwnsDataReactClient
+npm install
+npm run build
+cd ..
+
+------------------------------------------------------------------------
+3. SETUP DAEMONS (SYSTEMD SERVICES)
+------------------------------------------------------------------------
+To keep the .NET applications running in the background and restart 
+automatically on server reboots, create Systemd service files:
+
+--- A. Web API Service ---
+Create the file: /etc/systemd/system/mikano-api.service
+Contents:
+[Unit]
+Description=Mikano Analytics Web API
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/mikano-analytics/publish-api
+ExecStart=/usr/bin/dotnet AppOwnsDataWebApi.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=mikano-api
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+[Install]
+WantedBy=multi-user.target
+
+--- B. Admin App Service ---
+Create the file: /etc/systemd/system/mikano-admin.service
+Contents:
+[Unit]
+Description=Mikano Analytics Admin Portal
+After=network.target
+
+[Service]
+WorkingDirectory=/var/www/mikano-analytics/publish-admin
+ExecStart=/usr/bin/dotnet AppOwnsDataAdmin.dll
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=mikano-admin
+Environment=ASPNETCORE_ENVIRONMENT=Production
+Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
+
+[Install]
+WantedBy=multi-user.target
+
+--- Enable and Start the Services ---
+sudo systemctl daemon-reload
+sudo systemctl enable mikano-api.service mikano-admin.service
+sudo systemctl start mikano-api.service mikano-admin.service
+
+------------------------------------------------------------------------
+4. CONFIGURE DATABASE FILE PERMISSIONS (SQLITE)
+------------------------------------------------------------------------
+Because we are using SQLite, the app process needs write permissions 
+to the database file (AppOwnsDataDB.db) and its parent folder:
+
+sudo chown -R www-data:www-data /var/www/mikano-analytics/publish-api
+sudo chown -R www-data:www-data /var/www/mikano-analytics/publish-admin
+
+------------------------------------------------------------------------
+5. NGINX CONFIGURATION (REVERSE PROXY)
+------------------------------------------------------------------------
+Configure Nginx to serve the React static assets and route API calls
+to the backend services.
+
+Create Nginx site config: /etc/nginx/sites-available/mikano-portal
+Contents:
+server {
+    listen 80;
+    server_name yourdomain.com; # Replace with your domain or server IP
+
+    # React Client static files
+    location / {
+        root /var/www/mikano-analytics/AppOwnsDataReactClient/wwwroot;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy calls to the Web API backend
+    location /api/ {
+        proxy_pass http://localhost:5002/api/; # Maps to Web API http port
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection keep-alive;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+
+--- Enable Nginx Site ---
+sudo ln -s /etc/nginx/sites-available/mikano-portal /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl restart nginx
+========================================================================

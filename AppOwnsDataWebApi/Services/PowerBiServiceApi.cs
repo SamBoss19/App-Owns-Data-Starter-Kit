@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Web;
@@ -19,12 +20,14 @@ namespace AppOwnsDataWebApi.Services {
     private readonly AppOwnsDataDBService appOwnsDataDBService;
 
     private int embedTokenLifetime { get; set; }
+    private string rlsRoleName { get; set; }
     private string accessToken { get; set; }
     private PowerBIClient pbiClient { get; set; }
 
     public PowerBiServiceApi(IConfiguration configuration, TokenManager tokenManager, AppOwnsDataDBService appOwnsDataDBService) {
       this.urlPowerBiServiceApiRoot = configuration["PowerBi:ServiceRootUrl"];
       this.embedTokenLifetime = int.Parse(configuration["PowerBi:EmbedTokenLifetime"]);
+      this.rlsRoleName = configuration["PowerBi:RlsRoleName"] ?? "Manager";
       this.tokenManager = tokenManager;
       this.appOwnsDataDBService = appOwnsDataDBService;
       this.accessToken = this.tokenManager.getAccessToken();
@@ -34,22 +37,6 @@ namespace AppOwnsDataWebApi.Services {
     public PowerBIClient GetPowerBiClient() {
       var tokenCredentials = new TokenCredentials(this.accessToken, "Bearer");
       return new PowerBIClient(new Uri(urlPowerBiServiceApiRoot), tokenCredentials);
-    }
-
-    private PowerBIClient GetPowerBiClientForProfile(Guid ProfileId) {
-      var tokenCredentials = new TokenCredentials(this.accessToken, "Bearer");
-      return new PowerBIClient(new Uri(urlPowerBiServiceApiRoot), tokenCredentials, ProfileId);
-    }
-
-    private void SetCallingContext(string ProfileId = "") {
-
-      if (ProfileId.Equals("")) {
-        pbiClient = GetPowerBiClient();
-      }
-      else {
-        pbiClient = GetPowerBiClientForProfile(new Guid(ProfileId));
-      }
-
     }
 
     public async Task<EmbeddedViewModel> GetEmbeddedViewModel(string user) {
@@ -62,21 +49,22 @@ namespace AppOwnsDataWebApi.Services {
 
       AppOwnsDataModels.PowerBiTenant currentTenant = appOwnsDataDBService.GetTenant(currentUser.TenantName);
 
-      SetCallingContext(currentTenant.ProfileId);
-
       Guid workspaceId = new Guid(currentTenant.WorkspaceId);
 
-      var datasets = (await pbiClient.Datasets.GetDatasetsInGroupAsync(workspaceId)).Value;
-      var embeddedDatasets = new List<EmbeddedDataset>();
-      foreach (var dataset in datasets) {
-        embeddedDatasets.Add(new EmbeddedDataset {
-          id = dataset.Id,
-          name = dataset.Name,
-          createReportEmbedURL = dataset.CreateReportEmbedURL
-        });
+      var reports = (await pbiClient.Reports.GetReportsInGroupAsync(workspaceId)).Value;
+
+      // Filter reports if not a tenant admin
+      if (!currentUser.TenantAdmin) {
+        if (string.IsNullOrEmpty(currentUser.AllowedReportIds) || currentUser.AllowedReportIds == "none") {
+          reports = new List<Microsoft.PowerBI.Api.Models.Report>();
+        } else {
+          var allowedIds = currentUser.AllowedReportIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(id => id.Trim())
+                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+          reports = reports.Where(r => allowedIds.Contains(r.Id.ToString())).ToList();
+        }
       }
 
-      var reports = (await pbiClient.Reports.GetReportsInGroupAsync(workspaceId)).Value;
       var embeddedReports = new List<EmbeddedReport>();
       foreach (var report in reports) {
         embeddedReports.Add(new EmbeddedReport {
@@ -88,11 +76,32 @@ namespace AppOwnsDataWebApi.Services {
         });
       }
 
+      var datasets = (await pbiClient.Datasets.GetDatasetsInGroupAsync(workspaceId)).Value;
+      
+      // Filter datasets to only those referenced by allowed reports
+      var allowedDatasetIds = reports.Select(r => r.DatasetId).ToHashSet();
+      datasets = datasets.Where(d => allowedDatasetIds.Contains(d.Id)).ToList();
+
+      var embeddedDatasets = new List<EmbeddedDataset>();
+      foreach (var dataset in datasets) {
+        embeddedDatasets.Add(new EmbeddedDataset {
+          id = dataset.Id,
+          name = dataset.Name,
+          createReportEmbedURL = dataset.CreateReportEmbedURL
+        });
+      }
+
       IList<GenerateTokenRequestV2Dataset> datasetRequests = new List<GenerateTokenRequestV2Dataset>();
       IList<string> datasetIds = new List<string>();
+      IList<EffectiveIdentity> identities = new List<EffectiveIdentity>();
 
       foreach (var dataset in datasets) {
         datasetRequests.Add(new GenerateTokenRequestV2Dataset(dataset.Id, xmlaPermissions: XmlaPermissions.ReadOnly));
+        identities.Add(new EffectiveIdentity(
+          username: currentUser.LoginId,
+          datasets: new List<string> { dataset.Id },
+          roles: new List<string> { this.rlsRoleName }
+        ));
         datasetIds.Add(dataset.Id);
       };
 
@@ -107,16 +116,38 @@ namespace AppOwnsDataWebApi.Services {
         workspaceRequests.Add(new GenerateTokenRequestV2TargetWorkspace(workspaceId));
       }
 
+      if (reports.Count == 0) {
+        return new EmbeddedViewModel {
+          tenantName = currentUser.TenantName,
+          reports = embeddedReports,
+          datasets = embeddedDatasets,
+          embedToken = "",
+          embedTokenId = "",
+          embedTokenExpiration = default,
+          user = currentUser.LoginId,
+          userCanEdit = currentUser.CanEdit,
+          userCanCreate = currentUser.CanCreate
+        };
+      }
+
       GenerateTokenRequestV2 tokenRequest =
         new GenerateTokenRequestV2 {
           Datasets = datasetRequests,
           Reports = reportRequests,
           TargetWorkspaces = workspaceRequests,
+          Identities = identities,
           LifetimeInMinutes = embedTokenLifetime
         };
 
       // call to Power BI Service API and pass GenerateTokenRequest object to generate embed token
-      var EmbedTokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      EmbedToken EmbedTokenResult;
+      try {
+        EmbedTokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      }
+      catch (HttpOperationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.BadRequest && tokenRequest.Identities != null && tokenRequest.Identities.Count > 0) {
+        tokenRequest.Identities = null;
+        EmbedTokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      }
 
       return new EmbeddedViewModel {
         tenantName = currentUser.TenantName,
@@ -144,14 +175,35 @@ namespace AppOwnsDataWebApi.Services {
 
       Guid workspaceId = new Guid(currentTenant.WorkspaceId);
 
-      SetCallingContext(currentTenant.ProfileId);
-
       var reports = (await pbiClient.Reports.GetReportsInGroupAsync(workspaceId)).Value;
+
+      // Filter reports if not a tenant admin
+      if (!currentUser.TenantAdmin) {
+        if (string.IsNullOrEmpty(currentUser.AllowedReportIds) || currentUser.AllowedReportIds == "none") {
+          reports = new List<Microsoft.PowerBI.Api.Models.Report>();
+        } else {
+          var allowedIds = currentUser.AllowedReportIds.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                                        .Select(id => id.Trim())
+                                                        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+          reports = reports.Where(r => allowedIds.Contains(r.Id.ToString())).ToList();
+        }
+      }
+
       var datasets = (await pbiClient.Datasets.GetDatasetsInGroupAsync(workspaceId)).Value;
 
+      // Filter datasets to only those referenced by allowed reports
+      var allowedDatasetIds = reports.Select(r => r.DatasetId).ToHashSet();
+      datasets = datasets.Where(d => allowedDatasetIds.Contains(d.Id)).ToList();
+
       IList<GenerateTokenRequestV2Dataset> datasetRequests = new List<GenerateTokenRequestV2Dataset>();
+      IList<EffectiveIdentity> identities = new List<EffectiveIdentity>();
       foreach (var dataset in datasets) {
         datasetRequests.Add(new GenerateTokenRequestV2Dataset(dataset.Id, xmlaPermissions: XmlaPermissions.ReadOnly));
+        identities.Add(new EffectiveIdentity(
+          username: currentUser.LoginId,
+          datasets: new List<string> { dataset.Id },
+          roles: new List<string> { this.rlsRoleName }
+        ));
       };
 
       IList<GenerateTokenRequestV2Report> reportRequests = new List<GenerateTokenRequestV2Report>();
@@ -165,15 +217,31 @@ namespace AppOwnsDataWebApi.Services {
         workspaceRequests.Add(new GenerateTokenRequestV2TargetWorkspace(workspaceId));
       }
 
+      if (reports.Count == 0) {
+        return new EmbedTokenResult {
+          embedToken = "",
+          embedTokenId = "",
+          embedTokenExpiration = default
+        };
+      }
+
       GenerateTokenRequestV2 tokenRequest =
         new GenerateTokenRequestV2 {
           Datasets = datasetRequests,
           Reports = reportRequests,
           TargetWorkspaces = workspaceRequests,
+          Identities = identities,
           LifetimeInMinutes = embedTokenLifetime
         };
 
-      var tokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      EmbedToken tokenResult;
+      try {
+        tokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      }
+      catch (HttpOperationException ex) when (ex.Response.StatusCode == System.Net.HttpStatusCode.BadRequest && tokenRequest.Identities != null && tokenRequest.Identities.Count > 0) {
+        tokenRequest.Identities = null;
+        tokenResult = pbiClient.EmbedToken.GenerateToken(tokenRequest);
+      }
 
       // call to Power BI Service API and pass GenerateTokenRequest object to generate embed token
       return new EmbedTokenResult {
@@ -211,8 +279,6 @@ namespace AppOwnsDataWebApi.Services {
         default:
           throw new ApplicationException("Power BI reports do not support exort to " + request.ExportType);
       }
-
-      SetCallingContext(currentTenant.ProfileId);
 
       var exportRequest = new ExportReportRequest {
         Format = fileFormat,
@@ -264,6 +330,5 @@ namespace AppOwnsDataWebApi.Services {
         return null;
       }
     }
-
   }
 }

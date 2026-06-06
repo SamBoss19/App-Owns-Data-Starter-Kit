@@ -26,7 +26,7 @@ namespace AppOwnsDataWebApi {
 
       // initialize database connection with connection string
       string connectString = Configuration["AppOwnsDataDB:ConnectString"];
-      services.AddDbContext<AppOwnsDataDB>(opt => opt.UseSqlServer(connectString));
+      services.AddDbContext<AppOwnsDataDB>(opt => opt.UseSqlite(connectString));
 
       // register custom class to support depenency injection in controllers
       services.AddScoped(typeof(AppOwnsDataDB));
@@ -57,6 +57,16 @@ namespace AppOwnsDataWebApi {
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+      using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope()) {
+        var context = serviceScope.ServiceProvider.GetRequiredService<AppOwnsDataDB>();
+        try {
+          context.Database.EnsureCreated();
+        }
+        catch (System.Exception ex) {
+          System.Console.WriteLine($"Database initialization warning: {ex.Message}");
+        }
+      }
+
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
         app.UseSwagger();

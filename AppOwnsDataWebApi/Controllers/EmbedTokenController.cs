@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Web.Resource;
@@ -22,8 +22,11 @@ namespace AppOwnsDataWebApi.Controllers {
     }
 
     [HttpGet]
-    public async Task<EmbedTokenResult> Get() {
-      string user = this.User.FindFirst("preferred_username").Value;
+    public async Task<ActionResult<EmbedTokenResult>> Get() {
+      string user = this.User.GetUserLoginId();
+      if (string.IsNullOrEmpty(user)) {
+        return Unauthorized("User login ID could not be identified from token claims.");
+      }
       return await this.powerBiServiceApi.GetEmbedToken(user);
     }
 

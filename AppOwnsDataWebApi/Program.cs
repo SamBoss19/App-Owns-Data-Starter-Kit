@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 namespace AppOwnsDataWebApi {
   public class Program {
     public static void Main(string[] args) {
+      DotNetEnv.Env.TraversePath().Load();
       CreateHostBuilder(args).Build().Run();
     }
 

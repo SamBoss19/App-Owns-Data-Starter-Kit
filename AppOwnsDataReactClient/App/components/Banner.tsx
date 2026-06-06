@@ -46,7 +46,7 @@ const Banner = () => {
       <Box sx={{ display: 'flex' }} >
         <IconButton onClick={() => { navigate("/") }} edge="start" color="inherit" aria-label="menu" sx={appIconButtonProps} >
           <Apps sx={appIconImageProps} />
-          <Typography variant="h5" flexGrow={0} sx={appTitleProps} >App-Owns-Data React Client</Typography>
+          <Typography variant="h5" flexGrow={0} sx={appTitleProps} >Mikano International Analytics Portal</Typography>
         </IconButton>
         <Login />
       </Box>

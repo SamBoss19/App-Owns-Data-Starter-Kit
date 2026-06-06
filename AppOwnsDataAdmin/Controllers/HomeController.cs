@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -42,43 +42,28 @@ namespace AppOwnsDataAdmin.Controllers {
 
     public class OnboardTenantModel {
       public string TenantName { get; set; }
-      public string SuggestedDatabase { get; set; }
-      public List<SelectListItem> DatabaseOptions { get; set; }
-      public string SuggestedAppIdentity { get; set; }
-      public List<SelectListItem> AppIdentityOptions { get; set; }
+      public string WorkspaceId { get; set; }
     }
 
     public IActionResult OnboardTenant() {
-
       var model = new OnboardTenantModel {
         TenantName = this.AppOwnsDataDBService.GetNextTenantName(),
-        SuggestedDatabase = "WingtipSales",
-        DatabaseOptions = new List<SelectListItem> {
-          new SelectListItem{ Text="AcmeCorpSales", Value="AcmeCorpSales" },
-          new SelectListItem{ Text="ContosoSales", Value="ContosoSales" },
-          new SelectListItem{ Text="MegaCorpSales", Value="MegaCorpSales" }
-        }
+        WorkspaceId = ""
       };
-
       return View(model);
     }
 
     [HttpPost]
-    public IActionResult OnboardTenant(string TenantName, string DatabaseServer, string DatabaseName, string DatabaseUserName, string DatabaseUserPassword) {
-
+    public IActionResult OnboardTenant(string TenantName, string WorkspaceId) {
       var tenant = new PowerBiTenant {
         Name = TenantName,
-        DatabaseServer = DatabaseServer,
-        DatabaseName = DatabaseName,
-        DatabaseUserName = DatabaseUserName,
-        DatabaseUserPassword = DatabaseUserPassword,
+        WorkspaceId = WorkspaceId
       };    
 
       tenant = this.powerBiServiceApi.OnboardNewTenant(tenant);
       this.AppOwnsDataDBService.OnboardNewTenant(tenant);
 
       return RedirectToAction("Tenants");
-
     }
 
     public IActionResult DeleteTenant(string TenantName) {
@@ -88,9 +73,9 @@ namespace AppOwnsDataAdmin.Controllers {
       return RedirectToAction("Tenants");
     }
 
-    public IActionResult Embed(string TenantName) {
+    public IActionResult Embed(string TenantName, string ReportId = null) {
       var tenant = this.AppOwnsDataDBService.GetTenant(TenantName);
-      var viewModel = this.powerBiServiceApi.GetReportEmbeddingData(tenant).Result;
+      var viewModel = this.powerBiServiceApi.GetReportEmbeddingData(tenant, ReportId).Result;
       return View(viewModel);
     }
 
@@ -107,21 +92,39 @@ namespace AppOwnsDataAdmin.Controllers {
     public class EditUserModel {
       public User User { get; set; }
       public List<SelectListItem> TenantOptions { get; set; }
+      public IList<Microsoft.PowerBI.Api.Models.Report> AvailableReports { get; set; }
     }
 
     public IActionResult EditUser(string LoginId) {
+      var user = AppOwnsDataDBService.GetUser(LoginId);
+      IList<Microsoft.PowerBI.Api.Models.Report> reports = new List<Microsoft.PowerBI.Api.Models.Report>();
+      if (!string.IsNullOrEmpty(user.TenantName)) {
+        var tenant = AppOwnsDataDBService.GetTenant(user.TenantName);
+        if (tenant != null) {
+          try {
+            reports = powerBiServiceApi.GetTenantDetails(tenant).Reports;
+          } catch (Exception) {
+            // Gracefully handle if API is not fully configured yet
+          }
+        }
+      }
+
       var model = new EditUserModel{
-        User = AppOwnsDataDBService.GetUser(LoginId),
+        User = user,
         TenantOptions = this.AppOwnsDataDBService.GetTenants().Select(tenant => new SelectListItem {
                 Text = tenant.Name,
                 Value = tenant.Name
               }).ToList(),
+        AvailableReports = reports
       };
       return View(model);
     }
 
     [HttpPost]
-    public IActionResult EditUser(User user) {
+    public IActionResult EditUser(User user, string[] SelectedReportIds) {
+      user.AllowedReportIds = SelectedReportIds != null && SelectedReportIds.Length > 0
+          ? string.Join(",", SelectedReportIds)
+          : "none";
       var model = AppOwnsDataDBService.UpdateUser(user);
       return RedirectToAction("Users");
     }

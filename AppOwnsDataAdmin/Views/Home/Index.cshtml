@@ -1,4 +1,4 @@
-﻿@using System.Security.Principal
+@using System.Security.Principal
 
 @if (User.Identity.IsAuthenticated) {
   <div class="jumbotron">
@@ -9,15 +9,13 @@
 else {
   <div class="jumbotron">
 
-    <h1>Welcome to the App-Owns-Data Starter Kit</h1>
+    <h1>Mikano Data Operations Control Center</h1>
 
     <p>
-      This application was created to demonstrate managing a multitenant environment with
-      Power BI embedding. This application automates the provisioning of Power BI workspaces and allows an adminstrators
-      to assign permissions to users .
+      Welcome to the administrative backend for Mikano International's embedded analytics infrastructure. This console equips the Data Ops team to seamlessly manage multi-tenant environments, automate Power BI workspace provisioning, and oversee secure access controls across our reporting ecosystem.
     </p>
 
-    <p>Click the <strong>sign in</strong> link in the upper right to get started.</p>
+    <p>Authenticate as an administrator via the sign in link to configure department tenants, register service accounts, and monitor system activity.</p>
 
   </div>
 }

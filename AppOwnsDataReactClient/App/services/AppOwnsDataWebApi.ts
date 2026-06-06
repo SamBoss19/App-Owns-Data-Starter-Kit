@@ -1,4 +1,4 @@
-﻿
+
 import { AuthenticationResult } from '@azure/msal-browser';
 import { msalInstance } from './../index';
 import { userPermissionScopes } from "../AuthConfig";
@@ -6,8 +6,8 @@ import { ViewModel, EmbedTokenResult, ActivityLogEntry, User, ExportFileRequest 
 
 export default class AppOwnsDataWebApi {
 
-  //public static ApiRoot: string = "https://localhost:44302/api/";
-  public static ApiRoot: string = "https://appownsdatawebapi.azurewebsites.net/api/";
+  public static ApiRoot: string = "https://localhost:44302/api/";
+  //public static ApiRoot: string = "https://appownsdatawebapi.azurewebsites.net/api/";
 
   private static GetAccessToken = async (): Promise<string> => {
 
@@ -128,7 +128,7 @@ export default class AppOwnsDataWebApi {
     // Once POST call returns, get file name from HTTP response
     const header = fetchResponse.headers.get('Content-Disposition');
     const parts = header!.split(';');
-    let filename = parts[1].split('=')[1];
+    let filename = parts[1].split('=')[1].replace(/['"]/g, '').trim();
 
     // get blob with export file content
     let blob = await fetchResponse.blob();

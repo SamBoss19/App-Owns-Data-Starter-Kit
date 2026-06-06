@@ -37,14 +37,21 @@ const App = () => {
 
     const getEmbeddingDataAsync = async () => {
       setWorkspaceArtifactsLoading(true);
-      let viewModel = await AppOwnsDataWebApi.GetEmbeddingData();
-      setTenantName(viewModel.tenantName);
-      setReports(viewModel.reports);
-      setDatasets(viewModel.datasets);
-      setUser(account.name);
-      setUserCanEdit(viewModel.userCanEdit);
-      setUserCanCreate(viewModel.userCanCreate);
-      setWorkspaceArtifactsLoading(false);
+      try {
+        let viewModel = await AppOwnsDataWebApi.GetEmbeddingData();
+        setTenantName(viewModel.tenantName);
+        setReports(viewModel.reports);
+        setDatasets(viewModel.datasets);
+        setUser(account.name);
+        setUserCanEdit(viewModel.userCanEdit);
+        setUserCanCreate(viewModel.userCanCreate);
+      } catch (error) {
+        console.error("Error loading embedding data from Web API:", error);
+        // Fallback to empty tenantName so the UI stops loading and shows the warning
+        setTenantName("");
+      } finally {
+        setWorkspaceArtifactsLoading(false);
+      }
     }
     if (isAuthenticated) {
       getEmbeddingDataAsync()

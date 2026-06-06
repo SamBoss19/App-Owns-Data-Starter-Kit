@@ -33,7 +33,7 @@ namespace AppOwnsDataAdmin {
     public void ConfigureServices(IServiceCollection services) {
 
       string connectString = Configuration["AppOwnsDataDB:ConnectString"];
-      services.AddDbContext<AppOwnsDataDB>(opt => opt.UseSqlServer(connectString));
+      services.AddDbContext<AppOwnsDataDB>(opt => opt.UseSqlite(connectString));
 
 
       services.AddMicrosoftIdentityWebAppAuthentication(Configuration)
@@ -56,6 +56,16 @@ namespace AppOwnsDataAdmin {
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+      using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope()) {
+        var context = serviceScope.ServiceProvider.GetRequiredService<AppOwnsDataDB>();
+        try {
+          context.Database.EnsureCreated();
+        }
+        catch (System.Exception ex) {
+          System.Console.WriteLine($"Database initialization warning: {ex.Message}");
+        }
+      }
+
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
       }

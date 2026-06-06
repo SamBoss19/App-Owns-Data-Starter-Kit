@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
@@ -13,13 +13,8 @@ namespace AppOwnsDataShared.Models {
   public class PowerBiTenant {
     [Key]
     public string Name { get; set; }
-    public string ProfileId { get; set; }
     public string WorkspaceId { get; set; }
     public string WorkspaceUrl { get; set; }
-    public string DatabaseServer { get; set; }
-    public string DatabaseName { get; set; }
-    public string DatabaseUserName { get; set; }
-    public string DatabaseUserPassword { get; set; }
     public DateTime Created { get; set; }
   }
 
@@ -33,6 +28,7 @@ namespace AppOwnsDataShared.Models {
     public DateTime Created { get; set; }
     public DateTime LastLogin { get; set; }
     public string TenantName { get; set; }
+    public string AllowedReportIds { get; set; }
   }
 
   public class ActivityLogEntry {
@@ -75,7 +71,7 @@ namespace AppOwnsDataShared.Models {
       string configFilePath = @Directory.GetCurrentDirectory() + "/../AppOwnsDataAdmin/appsettings.json";
       IConfigurationRoot configuration = new ConfigurationBuilder().SetBasePath(Directory.GetCurrentDirectory()).AddJsonFile(configFilePath).Build();
       var builder = new DbContextOptionsBuilder<AppOwnsDataDB>();
-      builder.UseSqlServer(configuration["AppOwnsDataDB:ConnectString"]);
+      builder.UseSqlite(configuration["AppOwnsDataDB:ConnectString"]);
       return new AppOwnsDataDB(builder.Options);
     }
   }

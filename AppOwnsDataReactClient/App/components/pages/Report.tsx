@@ -84,7 +84,7 @@ const Report = () => {
     if (embeddingData.userCanEdit && embeddingData.userCanCreate) {
       permissions = models.Permissions.All;
     }
-    else if (embeddingData && !embeddingData.userCanCreate) {
+    else if (embeddingData.userCanEdit && !embeddingData.userCanCreate) {
       permissions = models.Permissions.ReadWrite;
     }
     else if (!embeddingData.userCanEdit && embeddingData.userCanCreate) {

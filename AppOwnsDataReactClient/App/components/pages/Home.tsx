@@ -37,8 +37,11 @@ const Home = () => {
   if (!isAuthenticated) {
     return (
       <Container maxWidth={false}>
-        <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the App-Owns-Data Starter Kit</Typography>
-        <Alert sx={{ border: 1, padding: 2, mx: 2 }} severity='info' >Click the <strong>LOGIN</strong> button in the upper right to get started.</Alert>
+        <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the Mikano International Analytics Portal</Typography>
+        <Typography variant='body1' sx={{ mb: 3 }} >
+          This platform serves as the centralized hub for managing Mikano's data environment and embedded Power BI reporting. It streamlines the provisioning of departmental workspaces, automates dashboard integrations, and allows administrators to securely assign access permissions across the organization.
+        </Typography>
+        <Alert sx={{ border: 1, padding: 2 }} severity='info' >Click the <strong>sign in</strong> link in the upper right to access your reports.</Alert>
       </Container>
     )
   }
@@ -46,9 +49,9 @@ const Home = () => {
   if (isAuthenticated && embeddingData.user && !embeddingData.tenantName) {
     return (
       <Container maxWidth={false}>
-        <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the App-Owns-Data Starter Kit</Typography>
-        <Alert sx={{ border: 1, padding: 2, mx: 2 }} severity='warning' >You user account has not been assigned to a tenant. You will
-          not have access to ny reports until your user account has been assigned to a tenant.</Alert>
+        <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the Mikano International Analytics Portal</Typography>
+        <Alert sx={{ border: 1, padding: 2 }} severity='warning' >Your user account has not been assigned to a department workspace. You will
+          not have access to any reports until your user account has been assigned.</Alert>
       </Container>
     )
   }
@@ -61,10 +64,10 @@ const Home = () => {
       <Container maxWidth={false}>
 
         <Container maxWidth="xl">
-          <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the App-Owns-Data Starter Kit</Typography>
+          <Typography variant='h5' component="h2" sx={{ my: 3 }} >Welcome to the Mikano International Analytics Portal</Typography>
 
           <Alert sx={{ border: 1 }} severity='info' >
-            Now that you have logged in, you can use the left navigation menu to navigate to the reports accessible within this tenant.
+            Now that you have logged in, you can use the left navigation menu to navigate to the reports accessible within your department.
           </Alert>
 
           <Typography variant='h6' component="h4" sx={{ mt: 2, mb: "6px" }} >Login Session Info:</Typography>
@@ -109,7 +112,7 @@ const Home = () => {
           <Typography variant='h6' component="h4" sx={{ mt: 2, borderBottom: 1, mb: "8px" }} >Tenant Contents</Typography>
 
           <Grid container >
-            <Grid item xs={6} sx={{ pr: "4px" }} >
+            <Grid item xs={embeddingData.userCanCreate ? 6 : 12} sx={{ pr: embeddingData.userCanCreate ? "4px" : "0px" }} >
               <Box sx={{ fontSize: "1.25rem", color: "white", background: "linear-gradient(to bottom, #607D8B, #455A64, #607D8B )", padding: "4px", paddingLeft: "12px", borderTopLeftRadius: "4px", borderTopRightRadius: "4px" }} >
                 Reports
               </Box>
@@ -130,26 +133,28 @@ const Home = () => {
                   ))}
               </List>
             </Grid>
-            <Grid item xs={6} sx={{ pl: "4px" }}>
-              <Box sx={{ fontSize: "1.25rem", color: "white", background: "linear-gradient(to bottom, #607D8B, #455A64, #607D8B )", padding: "4px", paddingLeft: "12px", borderTopLeftRadius: "4px", borderTopRightRadius: "4px" }} >
-                Datasets
-              </Box>
-              <List sx={{ backgroundColor: "#EEEEEE", border: "1px solid #CCCCCC", pb: 0 }} >
-                {embeddingData.datasets &&
-                  embeddingData.datasets.map((dataset) => (
-                    <ListItem key={dataset.id} divider dense >
-                      <ListItemButton onClick={() => { navigate("/reports/" + dataset.id); }}>
-                        <ListItemAvatar>
-                          <Avatar sx={{ backgroundColor: "#607D8B" }} >
-                            <Schema />
-                          </Avatar>
-                        </ListItemAvatar>
-                        <ListItemText primary={dataset.name} />
-                      </ListItemButton>
-                    </ListItem>
-                  ))}
-              </List>
-            </Grid>
+            {embeddingData.userCanCreate && (
+              <Grid item xs={6} sx={{ pl: "4px" }}>
+                <Box sx={{ fontSize: "1.25rem", color: "white", background: "linear-gradient(to bottom, #607D8B, #455A64, #607D8B )", padding: "4px", paddingLeft: "12px", borderTopLeftRadius: "4px", borderTopRightRadius: "4px" }} >
+                  Datasets
+                </Box>
+                <List sx={{ backgroundColor: "#EEEEEE", border: "1px solid #CCCCCC", pb: 0 }} >
+                  {embeddingData.datasets &&
+                    embeddingData.datasets.map((dataset) => (
+                      <ListItem key={dataset.id} divider dense >
+                        <ListItemButton onClick={() => { navigate("/reports/" + dataset.id); }}>
+                          <ListItemAvatar>
+                            <Avatar sx={{ backgroundColor: "#607D8B" }} >
+                              <Schema />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText primary={dataset.name} />
+                        </ListItemButton>
+                      </ListItem>
+                    ))}
+                </List>
+              </Grid>
+            )}
           </Grid>
         </Container>
       </Container>

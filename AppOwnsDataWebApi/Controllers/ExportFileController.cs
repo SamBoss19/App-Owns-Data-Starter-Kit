@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 
@@ -27,9 +27,12 @@ namespace AppOwnsDataWebApi.Controllers {
     }
 
     [HttpPost]
-    public async Task<FileStreamResult> PostExportFile([FromBody] ExportFileRequestParams exportRequest) {
+    public async Task<IActionResult> PostExportFile([FromBody] ExportFileRequestParams exportRequest) {
 
-      string user = this.User.FindFirst("preferred_username").Value;
+      string user = this.User.GetUserLoginId();
+      if (string.IsNullOrEmpty(user)) {
+        return Unauthorized("User login ID could not be identified from token claims.");
+      }
 
       var exportedReport = await this.powerBiServiceApi.ExportFile(user, exportRequest);
       exportedReport.ReportStream.Flush();
@@ -38,7 +41,7 @@ namespace AppOwnsDataWebApi.Controllers {
       Response.Headers.Add("Access-Control-Expose-Headers", "Content-Disposition");
 
       string fileName = exportedReport.ReportName + exportedReport.ResourceFileExtension;
-      Response.Headers.Add("Content-Disposition", "attachment;filename=s" + fileName);
+      Response.Headers.Add("Content-Disposition", "attachment;filename=\"" + fileName + "\"");
 
       string contentType = getContentTypeFromExtension(exportedReport.ResourceFileExtension);
       var file = new FileStreamResult(exportedReport.ReportStream, contentType);
