@@ -36,18 +36,16 @@ const LeftNav = () => {
   if (!show) return null;
 
   const renderList = (items: (PowerBiReport | PowerBiDataset)[] | null, accentColor: string) => (
-    <ul className="m-0 w-full list-none p-0 pb-2">
+    <ul className="m-0 w-full bg-themednavyblue_200 list-none p-0 pb-2">
       {items?.map((item) => {
         const active = document.URL.includes(item.id);
         return (
           <li
             key={item.id}
             onClick={() => { navigate("/reports/" + item.id); }}
-            className="w-full cursor-pointer py-1 pl-1.5 text-sm font-bold text-[#222222]"
-            style={{
-              backgroundColor: active ? "#DDDDDD" : "#F3F2F1",
-              borderLeft: active ? `4px solid ${accentColor}` : "",
-            }}
+            className={`w-full cursor-pointer py-1 hover:bg-themedred/20
+              ${active ? `bg-themedred/40 ${accentColor} border-l border-themedred/20` : ""}
+              pl-1.5 text-sm font-bold `}
           >
             {item.name}
           </li>

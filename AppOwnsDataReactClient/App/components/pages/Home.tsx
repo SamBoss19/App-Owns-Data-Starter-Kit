@@ -67,9 +67,10 @@ const Home = () => {
           <button
             type="button"
             onClick={() => { navigate("/reports/" + item.id); }}
-            className="flex w-full items-center gap-3 px-3 py-1.5 text-left hover:bg-gray-200"
+            className="flex w-full items-center gap-3 px-3 py-1.5 text-left hover:bg-themedred/20"
           >
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-white">
+            <span className="flex h-9 w-9 shrink-0 items-center 
+            justify-center rounded-full bg-themedgrey text-white">
               <Icon fontSize="small" />
             </span>
             <span className="text-sm">{item.name}</span>
@@ -106,12 +107,12 @@ const Home = () => {
 
       <div className="flex">
         <div className={embeddingData.userCanCreate ? "w-1/2 pr-1" : "w-full"}>
-          <div className="rounded-t bg-brand-gradient px-3 py-1 text-xl text-white">Reports</div>
+          <div className="rounded-t bg-themedred/20 px-3 py-1 text-xl text-white">Reports</div>
           {embeddingData.reports && contentList(embeddingData.reports, Assessment)}
         </div>
         {embeddingData.userCanCreate && (
           <div className="w-1/2 pl-1">
-            <div className="rounded-t bg-brand-gradient px-3 py-1 text-xl text-white">Datasets</div>
+            <div className="rounded-t bg-themedred/20 px-3 py-1 text-xl text-white">Datasets</div>
             {embeddingData.datasets && contentList(embeddingData.datasets, Schema)}
           </div>
         )}
