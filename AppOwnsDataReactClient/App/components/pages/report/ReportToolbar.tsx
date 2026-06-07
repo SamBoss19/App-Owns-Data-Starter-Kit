@@ -14,22 +14,10 @@ import { ViewMode } from './../Report'
 require('powerbi-models');
 require('powerbi-client');
 
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import TextField from '@mui/material/TextField';
-import Switch from '@mui/material/Switch';
-import { SxProps } from '@mui/system/styleFunctionSx/styleFunctionSx';
-
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogTitle from '@mui/material/DialogTitle';
-import LinearProgress from '@mui/material/LinearProgress';
+import Dropdown, { MenuItem, MenuRow, MenuDivider } from '../../ui/Dropdown';
+import Modal from '../../ui/Modal';
+import Switch from '../../ui/Switch';
+import LinearProgress from '../../ui/LinearProgress';
 
 import Fullscreen from '@mui/icons-material/Fullscreen';
 import Edit from '@mui/icons-material/Edit';
@@ -84,10 +72,7 @@ const ReportToolbar = ({ report, editMode, setEditMode, showNavigation, setShowN
 
   const refReportName = useRef<HTMLInputElement>(null);
 
-  const menuButtonProperties: SxProps = { fontSize: "9px", color: "#555555", ml: 1 };
-  const menuItemProps: SxProps = { fontSize: "11px", px: 1.5, py: 0, m: 0 };
-  const menuSwitchProps: SxProps = { ml: "auto", pl: 1 };
-  const menuRadioButtonProps: SxProps = { ml: "auto", pl: 1.5 };
+  const toolbarBtn = "ml-1 flex items-center gap-0.5 rounded px-1 py-1 text-[9px] uppercase text-[#555555] hover:bg-gray-200";
 
   const onFileSave = () => {
     setAnchorElementFile(null);
@@ -232,7 +217,7 @@ const ReportToolbar = ({ report, editMode, setEditMode, showNavigation, setShowN
     });
   };
 
-  const onViewToggleBookmarksPane = (args: any) => {
+  const onViewToggleBookmarksPane = () => {
     setShowBookmarksPane(!showBookmarksPane);
     report.updateSettings({
       panes: {
@@ -281,168 +266,198 @@ const ReportToolbar = ({ report, editMode, setEditMode, showNavigation, setShowN
     report.fullscreen();
   };
 
+  const dialogBtn = "rounded px-3 py-1.5 text-sm font-medium uppercase text-brand hover:bg-brand/10";
+
   return (
     <>
-      <Box sx={{ width: 1, backgroundColor: "#F3F2F1", p: 0, m: 0 }} >
-        <Toolbar disableGutters variant='dense' sx={{ p: 0, m: 0, minHeight: "32px" }} >
+      <div className="m-0 w-full bg-nav p-0">
+        <div className="m-0 flex min-h-[32px] items-center p-0">
           {editMode && (
             <>
-              <Button startIcon={<Article />} endIcon={<KeyboardArrowDown />} sx={menuButtonProperties}
-                onClick={(event) => { setAnchorElementFile(event.currentTarget); }} >
-                File
-              </Button>
-              <Menu sx={menuItemProps} anchorEl={anchorElementFile} open={Boolean(anchorElementFile)} onClose={() => { setAnchorElementFile(null); }} >
-                <MenuItem sx={menuItemProps} onClick={onFileSave} disableRipple >
-                  <Save sx={{ mr: 1 }} /> Save
-                </MenuItem>
-                {embeddingData.userCanCreate &&
+              <Dropdown
+                triggerClassName={toolbarBtn}
+                trigger={<><Article fontSize="small" /> File <KeyboardArrowDown fontSize="small" /></>}
+              >
+                {(close) => (
                   <>
-                    <Divider sx={{ my: 0.5 }} />
-                    <MenuItem sx={menuItemProps} onClick={onFileSaveAs} disableRipple >
-                      <SaveAs sx={{ mr: 1 }} /> Save As
+                    <MenuItem onClick={() => { close(); onFileSave(); }}>
+                      <Save className="mr-2" fontSize="small" /> Save
                     </MenuItem>
+                    {embeddingData.userCanCreate &&
+                      <>
+                        <MenuDivider />
+                        <MenuItem onClick={() => { close(); onFileSaveAs(); }}>
+                          <SaveAs className="mr-2" fontSize="small" /> Save As
+                        </MenuItem>
+                      </>
+                    }
                   </>
-                }
-              </Menu>
-              <Divider orientation='vertical' flexItem />
+                )}
+              </Dropdown>
+              <span className="mx-0.5 h-5 border-l border-gray-300" />
             </>
           )}
-          <>
-            <Button startIcon={<Download />} endIcon={<KeyboardArrowDown />} sx={menuButtonProperties}
-              onClick={(event) => { setAnchorElementExport(event.currentTarget); }} >
-              Export
-            </Button>
-            <Menu sx={menuItemProps} anchorEl={anchorElementExport} open={Boolean(anchorElementExport)}
-              onClose={() => { setAnchorElementExport(null); }} >
-              <MenuItem sx={menuItemProps} onClick={onExportPageToPDF}   >
-                <PictureAsPdf sx={{ mr: 1 }} /> Export Current Page to PDF
-              </MenuItem>
-              <Divider sx={{ my: 0.5 }} />
-              <MenuItem sx={menuItemProps} onClick={onExportPageToPNG} disableRipple >
-                <Image sx={{ mr: 1 }} /> Export Current Page to PNG
-              </MenuItem>
-              <Divider sx={{ my: 0.5 }} />
-              <MenuItem sx={menuItemProps} onClick={onExportPageToPPTX} disableRipple >
-                <Slideshow sx={{ mr: 1 }} /> Export Current Page to PowerPoint (PPTX)
-              </MenuItem>
-              <Divider sx={{ my: 0.5, borderWidth: "1px", backgroundColor: "#666666" }} />
-              <MenuItem sx={menuItemProps} onClick={onExportReportToPDF}  >
-                <PictureAsPdf sx={{ mr: 1 }} /> Export Report to PDF
-              </MenuItem>
-              <Divider sx={{ my: 1.5 }} />
-              <MenuItem sx={menuItemProps} onClick={onExportReportToPNG} disableRipple >
-                <Image sx={{ mr: 1 }} /> Export Report to PNG
-              </MenuItem>
-              <Divider sx={{ my: 0.5 }} />
-              <MenuItem sx={menuItemProps} onClick={onExportReportToPPTX} disableRipple >
-                <Slideshow sx={{ mr: 1 }} /> Export Report to PowerPoint (PPTX)
-              </MenuItem>
-            </Menu>
-            <Divider orientation='vertical' flexItem />
-          </>
 
-          <Button startIcon={<Visibility />} endIcon={<KeyboardArrowDown />} sx={menuButtonProperties}
-            onClick={(event) => { setAnchorElementView(event.currentTarget); }} >
-            View
-          </Button>
-          <Menu sx={menuItemProps} anchorEl={anchorElementView} open={Boolean(anchorElementView)} onClose={() => { setAnchorElementView(null); }} >
-            <MenuItem sx={menuItemProps} disableRipple >
-              <MenuIcon sx={{ mr: 1 }} /> Navigation Menu <Switch sx={menuSwitchProps} checked={showNavigation} onChange={onViewToggleNavigation} />
-            </MenuItem>
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem sx={menuItemProps} disableRipple >
-              <FilterAlt sx={{ mr: 1 }} /> Filter Pane <Switch sx={menuSwitchProps} checked={showFiltersPane} onChange={onViewToggleFilterPane} />
-            </MenuItem>
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem sx={menuItemProps} disableRipple >
-              <Bookmark sx={{ mr: 1 }} /> Bookmarks Pane<Switch sx={menuSwitchProps} checked={showBookmarksPane} onChange={onViewToggleBookmarksPane} />
-            </MenuItem>
-          </Menu>
+          <Dropdown
+            triggerClassName={toolbarBtn}
+            menuClassName="whitespace-nowrap"
+            trigger={<><Download fontSize="small" /> Export <KeyboardArrowDown fontSize="small" /></>}
+          >
+            {(close) => (
+              <>
+                <MenuItem onClick={() => { close(); onExportPageToPDF(); }}>
+                  <PictureAsPdf className="mr-2" fontSize="small" /> Export Current Page to PDF
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem onClick={() => { close(); onExportPageToPNG(); }}>
+                  <Image className="mr-2" fontSize="small" /> Export Current Page to PNG
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem onClick={() => { close(); onExportPageToPPTX(); }}>
+                  <Slideshow className="mr-2" fontSize="small" /> Export Current Page to PowerPoint (PPTX)
+                </MenuItem>
+                <div className="my-1 border-t border-[#666666]" />
+                <MenuItem onClick={() => { close(); onExportReportToPDF(); }}>
+                  <PictureAsPdf className="mr-2" fontSize="small" /> Export Report to PDF
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem onClick={() => { close(); onExportReportToPNG(); }}>
+                  <Image className="mr-2" fontSize="small" /> Export Report to PNG
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem onClick={() => { close(); onExportReportToPPTX(); }}>
+                  <Slideshow className="mr-2" fontSize="small" /> Export Report to PowerPoint (PPTX)
+                </MenuItem>
+              </>
+            )}
+          </Dropdown>
+          <span className="mx-0.5 h-5 border-l border-gray-300" />
 
-          <Divider orientation='vertical' flexItem />
+          <Dropdown
+            triggerClassName={toolbarBtn}
+            menuClassName="whitespace-nowrap"
+            trigger={<><Visibility fontSize="small" /> View <KeyboardArrowDown fontSize="small" /></>}
+          >
+            {() => (
+              <>
+                <MenuRow className="justify-between">
+                  <span className="flex items-center"><MenuIcon className="mr-2" fontSize="small" /> Navigation Menu</span>
+                  <Switch className="ml-3" checked={showNavigation} onChange={onViewToggleNavigation} />
+                </MenuRow>
+                <MenuDivider />
+                <MenuRow className="justify-between">
+                  <span className="flex items-center"><FilterAlt className="mr-2" fontSize="small" /> Filter Pane</span>
+                  <Switch className="ml-3" checked={showFiltersPane} onChange={onViewToggleFilterPane} />
+                </MenuRow>
+                <MenuDivider />
+                <MenuRow className="justify-between">
+                  <span className="flex items-center"><Bookmark className="mr-2" fontSize="small" /> Bookmarks Pane</span>
+                  <Switch className="ml-3" checked={showBookmarksPane} onChange={onViewToggleBookmarksPane} />
+                </MenuRow>
+              </>
+            )}
+          </Dropdown>
+
+          <span className="mx-0.5 h-5 border-l border-gray-300" />
 
           {embeddingData.userCanEdit &&
             <>
-              <Button startIcon={editMode ? <Pageview /> : <Edit />} sx={menuButtonProperties} onClick={onToggleEditMode} >
+              <button type="button" className={toolbarBtn} onClick={onToggleEditMode}>
+                {editMode ? <Pageview fontSize="small" /> : <Edit fontSize="small" />}
                 {editMode ? "Reading View" : "Edit"}
-              </Button>
-              <Divider orientation='vertical' flexItem />
+              </button>
+              <span className="mx-0.5 h-5 border-l border-gray-300" />
             </>
           }
 
-          <Divider orientation='vertical' flexItem sx={{ ml: "auto" }} />
+          <span className="ml-auto h-5 border-l border-gray-300" />
 
-          <Button startIcon={<FitScreen />} endIcon={<KeyboardArrowDown />} sx={menuButtonProperties}
-            onClick={(event) => { setAnchorElementViewMode(event.currentTarget); }} >
-            View Mode
-          </Button>
-          <Menu sx={menuItemProps} anchorEl={anchorElementViewMode} open={Boolean(anchorElementViewMode)} onClose={() => { setAnchorElementViewMode(null); }} >
-            <MenuItem onClick={onViewModeFitToPage} disableRipple sx={menuItemProps}  >
-              <FitScreen sx={{ mr: 1 }} /> Fit to Page {viewMode === "FitToPage" ? <RadioButtonChecked sx={menuRadioButtonProps} /> : <RadioButtonUnchecked sx={menuRadioButtonProps} />}
-            </MenuItem>
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem onClick={onViewModeFitToWidth} disableRipple sx={menuItemProps} >
-              <SyncAlt sx={{ mr: 1 }} /> Fit to Width {viewMode === "FitToWidth" ? <RadioButtonChecked sx={menuRadioButtonProps} /> : <RadioButtonUnchecked sx={menuRadioButtonProps} />}
-            </MenuItem>
-            <Divider sx={{ my: 0.5 }} />
-            <MenuItem onClick={onViewModeActualSize} disableRipple sx={menuItemProps} >
-              <PhotoSizeSelectActual sx={{ mr: 1 }} /> Actual Size {viewMode === "ActualSize" ? <RadioButtonChecked sx={menuRadioButtonProps} /> : <RadioButtonUnchecked sx={menuRadioButtonProps} />}
-            </MenuItem>
-          </Menu>
+          <Dropdown
+            align="right"
+            triggerClassName={toolbarBtn}
+            menuClassName="whitespace-nowrap"
+            trigger={<><FitScreen fontSize="small" /> View Mode <KeyboardArrowDown fontSize="small" /></>}
+          >
+            {(close) => (
+              <>
+                <MenuItem className="justify-between" onClick={() => { close(); onViewModeFitToPage(); }}>
+                  <span className="flex items-center"><FitScreen className="mr-2" fontSize="small" /> Fit to Page</span>
+                  {viewMode === "FitToPage" ? <RadioButtonChecked className="ml-3" fontSize="small" /> : <RadioButtonUnchecked className="ml-3" fontSize="small" />}
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem className="justify-between" onClick={() => { close(); onViewModeFitToWidth(); }}>
+                  <span className="flex items-center"><SyncAlt className="mr-2" fontSize="small" /> Fit to Width</span>
+                  {viewMode === "FitToWidth" ? <RadioButtonChecked className="ml-3" fontSize="small" /> : <RadioButtonUnchecked className="ml-3" fontSize="small" />}
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem className="justify-between" onClick={() => { close(); onViewModeActualSize(); }}>
+                  <span className="flex items-center"><PhotoSizeSelectActual className="mr-2" fontSize="small" /> Actual Size</span>
+                  {viewMode === "ActualSize" ? <RadioButtonChecked className="ml-3" fontSize="small" /> : <RadioButtonUnchecked className="ml-3" fontSize="small" />}
+                </MenuItem>
+              </>
+            )}
+          </Dropdown>
 
-          <Divider orientation='vertical' flexItem />
+          <span className="mx-0.5 h-5 border-l border-gray-300" />
 
-          <Button startIcon={<Refresh />} sx={menuButtonProperties} onClick={onReportRefresh} >Refresh</Button>
+          <button type="button" className={toolbarBtn} onClick={onReportRefresh}>
+            <Refresh fontSize="small" /> Refresh
+          </button>
 
-          <Divider orientation='vertical' flexItem />
+          <span className="mx-0.5 h-5 border-l border-gray-300" />
 
-          <Button startIcon={<Fullscreen />} sx={menuButtonProperties} onClick={onReportFullscreen}  >Full Screen</Button>
+          <button type="button" className={toolbarBtn} onClick={onReportFullscreen}>
+            <Fullscreen fontSize="small" /> Full Screen
+          </button>
 
-          <Divider orientation='vertical' flexItem sx={{ mr: 1 }} />
+          <span className="ml-0.5 mr-1 h-5 border-l border-gray-300" />
 
-        </Toolbar>
+        </div>
+      </div>
 
-      </Box >
+      <Modal
+        open={openSaveAsDialog}
+        onClose={() => { setOpenSaveAsDialog(false); }}
+        title="Enter report name"
+        actions={
+          <>
+            <button
+              type="button"
+              disabled={newReportName === ""}
+              onClick={async () => {
+                setOpenSaveAsDialog(false);
+                await report.saveAs({ name: newReportName });
+              }}
+              className={`${dialogBtn} disabled:cursor-not-allowed disabled:text-gray-400 disabled:hover:bg-transparent`}
+            >
+              Save
+            </button>
+            <button type="button" onClick={() => { setOpenSaveAsDialog(false); }} className={dialogBtn}>Cancel</button>
+          </>
+        }
+      >
+        <p className="mb-2">You need to give this new report a name.</p>
+        <input
+          ref={refReportName}
+          autoFocus
+          type="text"
+          placeholder="New Report Name"
+          value={newReportName}
+          onChange={(event) => { setNewReportName(event.target.value) }}
+          className="w-full border-0 border-b border-gray-400 px-0 py-1 text-sm focus:border-brand focus:outline-none"
+        />
+      </Modal>
 
-      <Dialog open={openSaveAsDialog} onClose={() => { setOpenSaveAsDialog(false); }} >
-        <DialogTitle>Enter report name</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            You need to give this new report a name.
-          </DialogContentText>
-          <TextField
-            onChange={(event) => { setNewReportName(event.target.value) }}
-            autoFocus
-            margin="dense"
-            id="name"
-            label="New Report Name"
-            type="text"
-            value={newReportName}
-            fullWidth
-            variant="standard"
-            inputRef={refReportName}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button disabled={newReportName === ""} onClick={async () => {
-            setOpenSaveAsDialog(false);
-            await report.saveAs({ name: newReportName });
-          }}>Save</Button>
-          <Button onClick={() => { setOpenSaveAsDialog(false); }}>Cancel</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={openExportProgressDialog} onClose={() => { setOpenExportProgressDialog(false); }} >
-        <DialogTitle>Power BI Report Export Job in Progress</DialogTitle>
-        <DialogContent >
-          <DialogContentText sx={{ display: "block", verticalAlign: "middle", width: "100%", backgroundColor: "lightblue" }} >
-            <LinearProgress />
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setOpenExportProgressDialog(false); }}>Dismiss</Button>
-        </DialogActions>
-      </Dialog>
+      <Modal
+        open={openExportProgressDialog}
+        onClose={() => { setOpenExportProgressDialog(false); }}
+        title="Power BI Report Export Job in Progress"
+        actions={<button type="button" onClick={() => { setOpenExportProgressDialog(false); }} className={dialogBtn}>Dismiss</button>}
+      >
+        <div className="w-full bg-blue-100 py-2">
+          <LinearProgress />
+        </div>
+      </Modal>
     </>
   )
 }

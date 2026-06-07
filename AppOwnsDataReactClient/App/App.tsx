@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { BrowserRouter } from "react-router-dom";
 
 import PageLayout from './components/PageLayout'
-import CssBaseline from '@mui/material/CssBaseline';
 
 import { useMsal, useIsAuthenticated, useAccount } from "@azure/msal-react";
 
@@ -73,7 +72,6 @@ const App = () => {
       refreshEmbeddingData: refreshEmbeddingData,
     }}>
 
-      <CssBaseline />
       <BrowserRouter>
         <PageLayout />
       </BrowserRouter>
