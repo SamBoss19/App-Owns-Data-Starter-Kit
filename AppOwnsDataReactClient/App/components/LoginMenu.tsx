@@ -1,17 +1,12 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMsal, useIsAuthenticated, useAccount } from "@azure/msal-react";
-
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Menu, { MenuProps } from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-import Divider from '@mui/material/Divider';
 
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LoginIcon from '@mui/icons-material/Login';
 import LogoutIcon from '@mui/icons-material/Logout';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+
+import Dropdown, { MenuItem, MenuDivider } from './ui/Dropdown';
 
 import { PowerBiLoginRequest } from "../AuthConfig";
 
@@ -30,51 +25,47 @@ const LoginMenu = () => {
     instance.logoutPopup();
   };
 
-  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
   if (isAuthenticated) {
     return (
-      <Box sx={{ marginLeft: "auto" }}>
-        <Button
-          sx={{ color: "white", mr: "12px;", mt: "4px" }}
-          disableElevation
-          onClick={handleClick}
-          startIcon={<AccountCircle />}
-          endIcon={<KeyboardArrowDownIcon />} >
-          {account?.name}
-        </Button>
-        <Menu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose} >
-          <MenuItem onClick={() => { handleClose(); navigate("profile") }} disableRipple sx={{ width: 1 }} >
-            <AccountCircle sx={{ mr: 1 }} />
-            User Profile
-          </MenuItem>
-          <Divider sx={{ my: 0.5 }} />
-          <MenuItem onClick={() => { handleClose(); logoutUser(); }} disableRipple>
-            <LogoutIcon sx={{ mr: 1 }} />
-            Logout
-          </MenuItem>
-        </Menu>
-      </Box>
+      <div className="ml-auto mr-3">
+        <Dropdown
+          align="right"
+          triggerClassName="flex items-center gap-1 px-2 py-1 text-sm font-medium uppercase text-white hover:bg-white/10 rounded"
+          trigger={
+            <>
+              <AccountCircle fontSize="small" />
+              <span className="normal-case">{account?.name}</span>
+              <KeyboardArrowDownIcon fontSize="small" />
+            </>
+          }
+        >
+          {(close) => (
+            <>
+              <MenuItem className="text-black text-sm" onClick={() => { close(); navigate("profile"); }}>
+                <AccountCircle className="mr-2" fontSize="small" /> User Profile
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem className="text-black  text-sm" onClick={() => { close(); logoutUser(); }}>
+                <LogoutIcon className="mr-2" fontSize="small" /> Logout
+              </MenuItem>
+            </>
+          )}
+        </Dropdown>
+      </div>
     );
   }
-  else {
-    return (
-      <Box sx={{ marginLeft: "auto", marginRight: "12px", pt: "4px" }}>
-        <Button onClick={loginUser} color="inherit" startIcon={<LoginIcon />}  >Login</Button>
-      </Box>
-    );
 
-  }
+  return (
+    <div className="ml-auto mr-3">
+      <button
+        type="button"
+        onClick={loginUser}
+        className="flex items-center gap-1 rounded px-2 py-1 text-sm font-medium uppercase text-white hover:bg-white/10"
+      >
+        <LoginIcon fontSize="small" /> Login
+      </button>
+    </div>
+  );
 }
 
 export default LoginMenu;

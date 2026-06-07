@@ -1,34 +1,22 @@
 import { useLayoutEffect, useRef } from 'react';
 
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress'
-import { SxProps } from '@mui/system/styleFunctionSx/styleFunctionSx';
+import Spinner from './ui/Spinner';
 
 const DataLoading = () => {
-  let topContaner = useRef();
-  let userMessge = useRef();
-  let progressIndicator = useRef();
-
-  let topContainerProps: SxProps = { width: 1, backgroundColor: "#F4D03F", textAlign: "center", p: 3 };
-
-  let userMessgeProps: SxProps = { m: 2, color: "Black", fontSize: "24px" };
-
-  let progressIndicatorProps: SxProps = { mt: "18px", color: "Black" };
+  let topContaner = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
-    var container: HTMLElement = topContaner.current;
-    container.style.height = (window.innerHeight - 50) + "px";
-    var indicator: HTMLElement = progressIndicator.current;
+    if (topContaner.current) {
+      topContaner.current.style.height = (window.innerHeight - 50) + "px";
+    }
   });
 
   return (
-    <Box ref={topContaner} sx={topContainerProps} >
-      <Typography variant='subtitle1' ref={userMessge} sx={userMessgeProps} >Waiting for data to load...</Typography>
-      <CircularProgress ref={progressIndicator} size="3rem" sx={progressIndicatorProps} />
-    </Box>
+    <div ref={topContaner} className="w-full bg-white text-black  p-6 text-center text-black">
+      <p className="m-4 text-2xl">Waiting for data to load...</p>
+      <Spinner size={48} className="mt-4 text-black" />
+    </div>
   );
-
 }
 
 export default DataLoading;

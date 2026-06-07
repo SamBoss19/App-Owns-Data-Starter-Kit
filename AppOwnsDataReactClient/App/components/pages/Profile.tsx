@@ -3,18 +3,6 @@ import { useMsal, useIsAuthenticated, useAccount } from "@azure/msal-react";
 
 import PageNotAccessible from './../PageNotAccessible';
 
-import Container from '@mui/material/Container';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-
 const Profile = () => {
   const isAuthenticated = useIsAuthenticated();
   const { accounts } = useMsal();
@@ -24,81 +12,72 @@ const Profile = () => {
   if (!isAuthenticated) {
     return <PageNotAccessible />;
   }
-  else {
-    return (
-      <Container maxWidth="xl">
-        <Typography variant='h5' component="h2" sx={{ my: 3 }} >User Profile</Typography>
 
-        <TableContainer component={Paper}>
-          <Table aria-label="simple table" sx={{ marginTop: "12px" }}>
-            <TableHead sx={{ "& th": { color: "white", backgroundColor: "black" } }} >
-              <TableRow>
-                <TableCell>Profile Property</TableCell>
-                <TableCell>Value</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              <TableRow key={"name"}>
-                <TableCell component="th" scope="row">name</TableCell>
-                <TableCell>{account?.name}</TableCell>
-              </TableRow>
-              <TableRow key={"username"}>
-                <TableCell component="th" scope="row">username</TableCell>
-                <TableCell>{account?.username}</TableCell>
-              </TableRow>
-              <TableRow key={"localAccountId"}>
-                <TableCell component="th" scope="row">localAccountId</TableCell>
-                <TableCell>{account?.localAccountId}</TableCell>
-              </TableRow>
-              <TableRow key={"tenantId"}>
-                <TableCell component="th" scope="row">tenantId</TableCell>
-                <TableCell>{account?.tenantId}</TableCell>
-              </TableRow>
-              <TableRow key={"homeAccountId"}>
-                <TableCell component="th" scope="row">homeAccountId</TableCell>
-                <TableCell>{account?.homeAccountId}</TableCell>
-              </TableRow>
-              <TableRow key={"environment"}>
-                <TableCell component="th" scope="row">environment</TableCell>
-                <TableCell>{account?.environment}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
-        </TableContainer>
+  return (
+    <div className="mx-auto w-full max-w-screen-xl px-4">
+      <h2 className="my-6 text-2xl">User Profile</h2>
 
-        <Divider />
-        <br />
+      <div className="rounded border border-gray-200 shadow-sm">
+        <table className="mt-3 w-full border-collapse text-sm">
+          <thead>
+            <tr className=" text-white">
+              <th className="px-4 py-2 text-left font-medium">Profile Property</th>
+              <th className="px-4 py-2 text-left font-medium">Value</th>
+            </tr>
+          </thead>
+          <tbody className='text-white font-extralight'>
+            {[
+              ["name", account?.name],
+              ["username", account?.username],
+              ["localAccountId", account?.localAccountId],
+              ["tenantId", account?.tenantId],
+              ["homeAccountId", account?.homeAccountId],
+              ["environment", account?.environment],
+            ].map(([key, value]) => (
+              <tr key={key as string} className="border-t border-gray-200">
+                <th scope="row" className="px-4 py-2 text-left font-semibold">{key}</th>
+                <td className="px-4 py-2">{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        <Button onClick={() => { setShowTokenClaims(!showTokenClaims); }} >
-          {showTokenClaims ? "Hide Token Claims" : "Show Token Claims"}
-        </Button>
+      <hr className="my-4 border-gray-200" />
 
-        {showTokenClaims && (
-          <>
-            <Typography variant='h6' component="h3">Token Claims</Typography>
-            <TableContainer component={Paper}>
-              <Table aria-label="simple table" sx={{ marginTop: "12px" }}>
-                <TableHead sx={{ "& th": { color: "white", backgroundColor: "black" } }} >
-                  <TableRow>
-                    <TableCell>Profile Property</TableCell>
-                    <TableCell>Value</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {Object.keys(account.idTokenClaims).map((key) => (
-                    <TableRow key={key}>
-                      <TableCell component="th" scope="row">{key}</TableCell>
-                      <TableCell>{(account.idTokenClaims[key] as string)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </>
-        )}
-      </Container>
-    )
-  }
+      <button
+        type="button"
+        onClick={() => { setShowTokenClaims(!showTokenClaims); }}
+        className="rounded px-3 py-1.5 text-sm font-medium uppercase text-brand hover:bg-brand/10"
+      >
+        {showTokenClaims ? "Hide Token Claims" : "Show Token Claims"}
+      </button>
+
+      {showTokenClaims && (
+        <>
+          <h3 className="my-3 text-xl">Token Claims</h3>
+          <div className="rounded border border-gray-200 shadow-sm">
+            <table className="mt-3 w-full border-collapse text-sm">
+              <thead>
+                <tr className="text-white">
+                  <th className="px-4 py-2 text-left font-medium">Profile Property</th>
+                  <th className="px-4 py-2 text-left font-medium">Value</th>
+                </tr>
+              </thead>
+              <tbody className='text-white font-extralight' >
+                {Object.keys(account.idTokenClaims).map((key) => (
+                  <tr key={key} className="border-t border-gray-200">
+                    <th scope="row" className="px-4 py-2 text-left font-semibold">{key}</th>
+                    <td className="px-4 py-2">{(account.idTokenClaims[key] as string)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  )
 }
 
 export default Profile;

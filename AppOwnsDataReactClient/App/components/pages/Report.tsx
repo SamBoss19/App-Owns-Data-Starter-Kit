@@ -21,8 +21,6 @@ import * as models from "powerbi-models";
 require('powerbi-models');
 require('powerbi-client');
 
-import Box from '@mui/material/Box';
-
 export type ViewMode = "FitToPage" | "FitToWidth" | "ActualSize";
 
 const Report = () => {
@@ -477,7 +475,7 @@ const Report = () => {
     else {
       return (
 
-        <Box sx={{ display: "grid", gridAutoFlow: "row", width: 1 }}>
+        <div className="grid w-full grid-flow-row">
 
           <ReportPath reportPath={reportPath} tokenExpiration={embedTokenExpirationDisplay} refreshEmbedToken={refreshEmbedToken} />
 
@@ -490,9 +488,9 @@ const Report = () => {
 
           {embedType === "NewReport" && <NewReportToolbar report={embeddedNewReport} />}
 
-          <Box ref={embedContainer} sx={{ width: "100%", borderBottom: 1, borderBottomColor: "#CCCCCC" }} />
+          <div ref={embedContainer} className="w-full border-b border-[#CCCCCC]" />
 
-        </Box>
+        </div>
 
       );
     }

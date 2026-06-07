@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App-wide resets that MUI's <CssBaseline /> used to provide. */
+
+
+body {
+  margin: 0;
+  font-family:  "Inter", "Helvetica", "Arial", sans-serif;
+}
+
+/* Indeterminate bar used by the LinearProgress primitive (replaces MUI). */
+@keyframes indeterminate-bar {
+  0% {
+    left: -40%;
+    width: 40%;
+  }
+  100% {
+    left: 100%;
+    width: 40%;
+  }
+}
+
+.animate-indeterminate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  animation: indeterminate-bar 1.2s infinite linear;
+}

@@ -1,15 +1,7 @@
 import { useState, useContext } from 'react';
 import { useIsAuthenticated } from "@azure/msal-react";
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { AppContext } from "../AppContext";
-
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Divider from '@mui/material/Divider';
-import { SxProps } from '@mui/system/styleFunctionSx/styleFunctionSx';
 
 import MenuIcon from '@mui/icons-material/Menu';
 import AssessmentIcon from '@mui/icons-material/Assessment';
@@ -29,46 +21,6 @@ const LeftNav = () => {
   const [leftNavWidth, setLeftNavWidth] = useState(expandedLeftNavWidth);
   const [leftNavExpanded, setLeftNavExpanded] = useState(true);
 
-  const leftNavTopBoxProps: SxProps = { width: 1, color: "#000000", backgroundColor: "#F3F2F1", mt: "44px" };
-
-  const leftNavOuterBoxProps: SxProps = { width: 1, display: "flex" };
-
-  const leftNavInnerBoxLeftProps: SxProps = {
-    width: "48px",
-    minWidth: "48px",
-    textAlign: "center",
-    p: 0,
-    pt: "4px",
-    color: "#444444"
-  };
-
-  const avatarProps: SxProps = { width: "22px", height: "22px", m: 0, mt: "2px" };
-
-  const leftNavInnerBoxTenantNameProps: SxProps = {
-    pt: "2px",
-    pl: "4px",
-    width: leftNavExpanded ? 1 : 0,
-    maxHeight: "28px;"
-  };
-
-  const leftNavTenantNameProps: SxProps = {
-    fontSize: "18px", width: 1, color: "#111111", pt: "4px"
-  };
-
-  const leftNavInnerBoxRightProps: SxProps = {
-    py: 0,
-    pl: "4px",
-    width: leftNavExpanded ? 1 : 0, color: "black"
-  };
-
-  const leftNavHeaderProps: SxProps = {
-    fontSize: "18px", width: 1, color: "#444444", pl: 0, mb: 0, my: 0, pt: "2px"
-  };
-
-  const leftNavListProps: SxProps = {
-    m: 0, p: 0, pb: "8px", width: 1
-  };
-
   const toggleLeftNavWidth = () => {
     if (leftNavExpanded) {
       setLeftNavExpanded(false);
@@ -80,95 +32,85 @@ const LeftNav = () => {
     }
   };
 
+  const show = isAuthenticated && embeddingData.tenantName && !embeddingData.workspaceArtifactsLoading;
+  if (!show) return null;
+
+  const renderList = (items: (PowerBiReport | PowerBiDataset)[] | null, accentColor: string) => (
+    <ul className="m-0 w-full bg-themednavyblue_200 list-none p-0 pb-2">
+      {items?.map((item) => {
+        const active = document.URL.includes(item.id);
+        return (
+          <li
+            key={item.id}
+            onClick={() => { navigate("/reports/" + item.id); }}
+            className={`w-full cursor-pointer py-1 hover:bg-themedred/20
+              ${active ? `bg-themedred/40 ${accentColor} border-l border-themedred/20` : ""}
+              pl-1.5 text-sm font-bold `}
+          >
+            {item.name}
+          </li>
+        );
+      })}
+    </ul>
+  );
+
   return (
-    <Drawer variant='permanent' anchor='left'
-      sx={{
-        width: leftNavWidth, zIndex: 1, pt: "84px", pb: 3,
-        display: (isAuthenticated && embeddingData.tenantName && !embeddingData.workspaceArtifactsLoading) ? "flex" : "none"
-      }}
-      PaperProps={{ sx: { width: leftNavWidth, backgroundColor: "#F3F2F1", borderRight: "1px solid #444444" } }}  >
+    <aside
+      className="z-[1] shrink-0 self-stretch border-r h-screen
+       border-[#444444] bg-themednavyblue text-white"
+      style={{ width: leftNavWidth }}
+    >
+      {/* Tenant name + collapse toggle */}
+      <div className="flex w-full">
+        <div className="w-12 min-w-[48px] p-0 pt-1 text-center ">
+          <MenuIcon className="cursor-pointer" 
+          style={{ width: 22, height: 22 }}
+           onClick={toggleLeftNavWidth} />
+        </div>
+        {leftNavExpanded && (
+          <div className="w-full pt-0.5 pl-1">
+            <span className="text-lg">{embeddingData.tenantName}</span>
+          </div>
+        )}
+      </div>
 
-      <Box sx={leftNavTopBoxProps} >
+      <div className="border-t border-white" />
 
-        <Box sx={leftNavOuterBoxProps} >
-          <Box sx={leftNavInnerBoxLeftProps} >
-            <MenuIcon sx={avatarProps} onClick={toggleLeftNavWidth} />
-          </Box>
-          <Box sx={leftNavInnerBoxTenantNameProps} >
-            <Typography sx={leftNavTenantNameProps} variant='h5' fontSize={20} >{embeddingData.tenantName}</Typography>
-          </Box>
-        </Box>
+      {/* Reports */}
+      <div className="flex w-full cursor-pointer">
+        <div className="w-12 min-w-[48px] p-0 pt-1 text-center ">
+          <AssessmentIcon style={{ width: 22, height: 22 }} />
+        </div>
+        {leftNavExpanded && (
+          <div className="w-full py-0 pl-1">
+            <h2 className="my-0 w-full pt-0.5 text-lg ">Reports</h2>
+            {embeddingData.workspaceArtifactsLoading && <DataLoading />}
+            {!embeddingData.workspaceArtifactsLoading && renderList(embeddingData.reports, "#607D8B")}
+          </div>
+        )}
+      </div>
 
-        <Divider sx={{ backgroundColor: "#CCCCCC" }} />
+      <div className="border-t border-white" />
 
-        <Box sx={leftNavOuterBoxProps} >
-          <Box sx={leftNavInnerBoxLeftProps} >
-            <AssessmentIcon sx={avatarProps} />
-          </Box>
-          {leftNavExpanded &&
-            <Box sx={leftNavInnerBoxRightProps}>
-              <Typography sx={leftNavHeaderProps} variant='subtitle1' >Reports</Typography>
-              {embeddingData.workspaceArtifactsLoading && <DataLoading />}
-              {!embeddingData.workspaceArtifactsLoading && (
-                <List disablePadding dense sx={leftNavListProps}>
-                  {embeddingData.reports?.map((report: PowerBiReport) => (
-                    <ListItem button key={report.id}
-                      sx={{
-                        py: "4px", pl: "6px", width: 1,
-                        fontWeight: "bold",
-                        fontSize: "14px",
-                        color: "$222222",
-                        backgroundColor: (document.URL.includes(report.id)) ? "#DDDDDD" : "#F3F2F1",
-                        borderLeft: (document.URL.includes(report.id)) ? "4px solid #607D8B" : ""
-                      }}
-                      onClick={() => {
-                        navigate("/reports/" + report.id);
-                      }} >{report.name}</ListItem>
-
-                  ))}
-                </List>
-              )}
-            </Box>
-          }
-        </Box>
-
-        <Divider sx={{ backgroundColor: "#CCCCCC" }} />
-
-        {embeddingData.userCanCreate &&
-          <>
-            <Box sx={leftNavOuterBoxProps} >
-              <Box sx={leftNavInnerBoxLeftProps} >
-                <SchemaIcon sx={avatarProps} />
-              </Box>
-              {leftNavExpanded &&
-                <Box sx={leftNavInnerBoxRightProps}>
-                  <Typography sx={leftNavHeaderProps} variant='subtitle1' >Datasets</Typography>
-                  {embeddingData.workspaceArtifactsLoading && <DataLoading />}
-                  {!embeddingData.workspaceArtifactsLoading && (
-                    <List disablePadding dense sx={leftNavListProps}>
-                      {embeddingData.datasets?.map((dataset: PowerBiDataset) => (
-                        <ListItem button key={dataset.id}
-                          sx={{
-                            py: "4px", pl: "6px", width: 1,
-                            fontWeight: "bold",
-                            fontSize: "14px",
-                            color: "$222222",
-                            backgroundColor: (document.URL.includes(dataset.id)) ? "#DDDDDD" : "#F3F2F1",
-                            borderLeft: (document.URL.includes(dataset.id)) ? "4px solid #455A64" : ""
-                          }}
-                          onClick={() => {
-                            navigate("/reports/" + dataset.id);
-                          }} >{dataset.name}</ListItem>
-                      ))}
-                    </List>
-                  )}
-                </Box>
-              }
-            </Box>
-            <Divider sx={{ backgroundColor: "#CCCCCC" }} />
-          </>}
-      </Box>
-    </Drawer >
+      {/* Datasets */}
+      {embeddingData.userCanCreate && (
+        <>
+          <div className="flex w-full cursor-pointer">
+            <div className="w-12 min-w-[48px] p-0 pt-1 text-center">
+              <SchemaIcon style={{ width: 22, height: 22 }} />
+            </div>
+            {leftNavExpanded && (
+              <div className="w-full cursor-pointer py-0 pl-1">
+                <h2 className="my-0 w-full pt-0.5 text-lg">Datasets</h2>
+                {embeddingData.workspaceArtifactsLoading && <DataLoading />}
+                {!embeddingData.workspaceArtifactsLoading && renderList(embeddingData.datasets, "#455A64")}
+              </div>
+            )}
+          </div>
+          <div className="border-t border-white" />
+        </>
+      )}
+    </aside>
   )
 }
 

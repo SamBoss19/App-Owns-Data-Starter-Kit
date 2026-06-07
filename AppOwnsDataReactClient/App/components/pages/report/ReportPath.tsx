@@ -1,8 +1,3 @@
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import { SxProps } from '@mui/system/styleFunctionSx/styleFunctionSx';
-
 interface ReportPathProps {
   reportPath: string;
   tokenExpiration: string;
@@ -10,44 +5,19 @@ interface ReportPathProps {
 }
 
 const ReportPath = ({ reportPath, tokenExpiration, refreshEmbedToken }: ReportPathProps) => {
-
-  const reportPathContainerProperties: SxProps = {
-    width: 1,
-    background: "linear-gradient(to bottom, #444444, #222222, #000000, #222222, #444444)",
-    p: 0,
-    m: 0,
-    display: "flex",
-    maxHeight: "36px"
-  };
-
-  const reportPathTextProperties: SxProps = {
-    pl: "12px",
-    pt: "8px",
-    fontSize: "16px",
-    color: 'white',
-    minHeight: "36px",
-    fontFamily: "arial"
-  };
-
-  const embedTokenTimeoutProps: SxProps = {
-    mr: "16px",
-    pt: "12px",
-    fontSize: "10px",
-    color: '#666666',
-    fontFamily: "arial",
-    ml: "auto",
-    "&:hover": { color: "yellow", backgroundColor: "#666666" }
-  };
-
   return (
-    <Box sx={reportPathContainerProperties} >
-      <Typography variant='h2' sx={reportPathTextProperties} >
+    <div className="flex max-h-[36px] w-full bg-path-gradient">
+      <div className="min-h-[36px] pl-3 pt-2 font-sans text-base text-white">
         {reportPath}
-      </Typography>
-      <Button variant='text' onClick={refreshEmbedToken} sx={embedTokenTimeoutProps} >
+      </div>
+      <button
+        type="button"
+        onClick={refreshEmbedToken}
+        className="ml-auto mr-4 pt-3 font-sans text-[10px] text-[#666666] hover:bg-[#666666] hover:text-yellow-300"
+      >
         {tokenExpiration}
-      </Button>
-    </Box>
+      </button>
+    </div>
   )
 }
 

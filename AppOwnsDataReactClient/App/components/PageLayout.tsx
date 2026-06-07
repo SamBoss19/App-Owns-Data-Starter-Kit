@@ -7,14 +7,12 @@ import Profile from './pages/Profile';
 import Report from './pages/Report';
 import PageNotFound from './PageNotFound';
 
-import Box from '@mui/material/Box';
-
 const PageLayout = () => {
 
   return (
-    <Box>
+    <div className="bg-themednavyblue_200 font-light text-white h-screen overflow-y-scroll pb-8">
       <Banner />
-      <Box sx={{ display: "flex" }} >
+      <div className="flex">
         <LeftNav />
         <Routes>
           <Route path="/" element={<Home />} />
@@ -22,8 +20,8 @@ const PageLayout = () => {
           <Route path="profile" element={<Profile />} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
