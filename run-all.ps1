@@ -36,7 +36,14 @@ if (-not (Test-Path (Join-Path $root "AppOwnsDataReactClient/node_modules"))) {
     npm --prefix (Join-Path $root "AppOwnsDataReactClient") install
 }
 
-$dotnetVerb = if ($Watch) { "watch --project {0} run" } else { "run --project {0}" }
+# Build the .NET solution first to prevent compiler lock conflicts (CS2012) on AppOwnsDataShared.dll
+Write-Host "Building .NET solution..." -ForegroundColor Yellow
+dotnet build (Join-Path $root "AppOwnsDataStarterKit.sln")
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Build failed. Resolve the compilation errors above before launching."
+}
+
+$dotnetVerb = if ($Watch) { "watch --project {0} run" } else { "run --project {0} --no-build" }
 
 function Start-Service-Window([string]$title, [string]$command, [string]$workdir) {
     Start-Process powershell -ArgumentList @(
