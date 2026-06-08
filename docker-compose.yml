@@ -1,0 +1,57 @@
+# Runs the three services that make up the running application:
+#   webapi  -> https://localhost:44302   (React client calls https://localhost:44302/api/)
+#   admin   -> https://localhost:44300
+#   react   -> http://localhost:5000
+#
+# The two .NET services run over HTTPS using a dev certificate mounted from
+# ./certs/cert.pfx so they match the localhost URLs registered in Azure AD.
+# Generate that cert once (see RUNNING.md, "Docker" section) before 'up'.
+services:
+  webapi:
+    build:
+      context: .
+      dockerfile: AppOwnsDataWebApi/Dockerfile
+    ports:
+      - "44302:443"
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: https://+:443
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/cert.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD:-devpassword}
+      AppOwnsDataDB__ConnectString: "Data Source=/data/AppOwnsDataDB.db"
+    volumes:
+      - ./certs:/https:ro
+      - aod-db:/data
+
+  admin:
+    build:
+      context: .
+      dockerfile: AppOwnsDataAdmin/Dockerfile
+    ports:
+      - "44300:443"
+    env_file:
+      - .env
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: https://+:443
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/cert.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${CERT_PASSWORD:-devpassword}
+      AppOwnsDataDB__ConnectString: "Data Source=/data/AppOwnsDataDB.db"
+    volumes:
+      - ./certs:/https:ro
+      - aod-db:/data
+
+  react:
+    build:
+      context: .
+      dockerfile: AppOwnsDataReactClient/Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - webapi
+
+# Shared SQLite database file used by both the API and the Admin portal.
+volumes:
+  aod-db:

@@ -1,0 +1,17 @@
+{
+  "name": "app-owns-data-starter-kit-runner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Root runner that starts the Web API, Admin portal and React client concurrently.",
+  "scripts": {
+    "setup": "npm --prefix AppOwnsDataReactClient install",
+    "dev": "concurrently -k -n API,ADMIN,REACT -c green,magenta,cyan \"dotnet run --project AppOwnsDataWebApi/AppOwnsDataWebApi.csproj\" \"dotnet run --project AppOwnsDataAdmin/AppOwnsDataAdmin.csproj\" \"npm --prefix AppOwnsDataReactClient start\"",
+    "watch": "concurrently -k -n API,ADMIN,REACT -c green,magenta,cyan \"dotnet watch --project AppOwnsDataWebApi/AppOwnsDataWebApi.csproj run\" \"dotnet watch --project AppOwnsDataAdmin/AppOwnsDataAdmin.csproj run\" \"npm --prefix AppOwnsDataReactClient start\"",
+    "api": "dotnet run --project AppOwnsDataWebApi/AppOwnsDataWebApi.csproj",
+    "admin": "dotnet run --project AppOwnsDataAdmin/AppOwnsDataAdmin.csproj",
+    "react": "npm --prefix AppOwnsDataReactClient start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
