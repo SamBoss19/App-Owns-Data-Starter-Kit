@@ -35,3 +35,6 @@ _ReSharper*/
 # OS specific files
 .DS_Store
 Thumbs.db
+*ubuntu_deployment.txt
+*RUNNING.md
+*AppOwnsDataDB.db

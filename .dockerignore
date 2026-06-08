@@ -1,0 +1,10 @@
+**/bin
+**/obj
+**/node_modules
+**/wwwroot/js/bundle.js
+AppOwnsDataReactClient/wwwroot/index.html
+.git
+certs
+publish-*
+*.pbix
+*.db
